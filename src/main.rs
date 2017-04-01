@@ -2,6 +2,7 @@ extern crate rand;
 
 use rand::distributions::{IndependentSample, Range};
 
+use std::process::Command;
 use std::io;
 
 
@@ -18,7 +19,7 @@ impl Board {
                                                 [0; 4],
                                                 [0; 4]
                                              ];
-        let between = Range::new(0, 3);
+        let between = Range::new(0, 4);
         let mut rng = rand::thread_rng();
 
         // The starting board starts with 3 1s, 3 2s and 3 3s at seemingly random places
@@ -57,12 +58,35 @@ impl Board {
     }
 }
 
+fn clear()
+{
+    if !cfg!(target_os = "windows") {
+        let output = Command::new("clear")
+                    .output()
+                    .expect("failure to clear window");
+        println!("{}", String::from_utf8_lossy(&output.stdout));
+    }
+}
+
+fn validate_input(input: &str) -> bool {
+    println!("{}", input);
+    match input.to_uppercase().as_ref() {
+        "W" => true,
+        "A" => true,
+        "S" => true,
+        "D" => true,
+        _  => {
+            println!("Enter either W, A, S or D you dummy");
+            false
+        }
+    }
+}
+
 
 fn main() {
     let mut game_board = Board::new();
     println!("How to play:
-This is a pretty basic simulation of the popular mobile game, Threes. Use W, A, S and D to move tiles up, left, down and right respectively, 
-or just use the arrow keys.
+This is a pretty basic simulation of the popular mobile game, Threes. Enter W, A, S or D to move tiles up, left, down or right respectively.
 
 Rules:
 - Making a move moves the whole board in that direction if possible
@@ -73,11 +97,15 @@ Rules:
 Have fun!
 ");
 
-    let mut input = String::new();
     while game_board.has_moves() {
         game_board.print();
-        io::stdin().read_line(&mut input).expect("Press one of the buttons described in the rules, dummy");
-        println!("You entered: {}", input)
-
+        let mut valid_input = false;
+        while !valid_input {
+            let mut input = String::new();
+            io::stdin().read_line(&mut input);
+            println!("You entered: {}", input.trim());
+            valid_input = validate_input(&input.trim());
+        }
+        clear();
     }
 }
