@@ -1,0 +1,7 @@
+[package]
+name = "threes"
+version = "0.1.0"
+authors = ["Chris McKee <cmckee41@qub.ac.uk>"]
+
+[dependencies]
+rand='*'
