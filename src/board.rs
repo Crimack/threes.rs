@@ -2,16 +2,12 @@
 use rand::distributions::{IndependentSample, Range};
 use rand::thread_rng;
 
-enum SpawnPosition {
-    Top,
-    Bottom,
-    Left,
-    Right
-}
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Board {
-    state: [[u32; 4]; 4]
+    state: [[u32; 4]; 4],
+    has_moves: bool
 }
 
 impl Board {
@@ -40,7 +36,7 @@ impl Board {
                 }
             }
         }
-        Board { state: starting_state } 
+        Board { state: starting_state, has_moves: true } 
     }
 
     pub fn move_up(&mut self) {
@@ -55,6 +51,17 @@ impl Board {
                 }
             }
         }
+
+        // Spawn new tile in bottom row
+        let mut possible_locations = vec![];
+        for col in 0..4 {
+            if self.state[3][col] == 0 {
+                possible_locations.push(col);
+            }
+        }
+        let between = Range::new(0, possible_locations.len());
+        let mut rng = thread_rng();
+        self.state[3][possible_locations[between.ind_sample(&mut rng)]] = generate_new_tile_value(&self);
     }
 
     pub fn move_down(&mut self) {
@@ -69,6 +76,16 @@ impl Board {
                 }
             }
         }
+        // Spawn new tile in top row
+        let mut possible_locations = vec![];
+        for col in 0..4 {
+            if self.state[0][col] == 0 {
+                possible_locations.push(col);
+            }
+        }
+        let between = Range::new(0, possible_locations.len());
+        let mut rng = thread_rng();
+        self.state[0][possible_locations[between.ind_sample(&mut rng)]] = generate_new_tile_value(&self);
     }
 
     pub fn move_left(&mut self) {
@@ -83,6 +100,17 @@ impl Board {
                 }
             }
         }
+
+        // Spawn new tile in right column
+        let mut possible_locations = vec![];
+        for row in 0..4 {
+            if self.state[row][3] == 0 {
+                possible_locations.push(row);
+            }
+        }
+        let between = Range::new(0, possible_locations.len());
+        let mut rng = thread_rng();
+        self.state[possible_locations[between.ind_sample(&mut rng)]][3] = generate_new_tile_value(&self);
     }
 
     pub fn move_right(&mut self) {
@@ -97,11 +125,26 @@ impl Board {
                 }
             }
         }
-        
+
+        // Spawn new tile in left column
+        let mut possible_locations = vec![];
+        for row in 0..4 {
+            if self.state[row][0] == 0 {
+                possible_locations.push(row);
+            }
+        }
+        let between = Range::new(0, possible_locations.len());
+        let mut rng = thread_rng();
+        self.state[possible_locations[between.ind_sample(&mut rng)]][0] = generate_new_tile_value(&self);    
+    }
+
+    pub fn get_value_at(&self, x: usize, y: usize) -> u32 {
+        let result = self.state[x][y];
+        result
     }
 
     pub fn has_moves(&self) -> bool {
-        true
+        self.has_moves
     }
 
     pub fn print(&self) {
@@ -120,7 +163,7 @@ impl Board {
 }
 
 fn handle_collisions(x: u32, y: u32) -> (bool, Option<u32>) {
-    if (x == 0) {
+    if x == 0 {
         (true, Some(y))
     } else if (x==1 && y==2) | (y==1 && x==2) {
         (true, Some(3))
@@ -131,4 +174,39 @@ fn handle_collisions(x: u32, y: u32) -> (bool, Option<u32>) {
     }
 }
 
-// fn spawn_new_tile(board: Board, position: SpawnPosition)
+fn generate_new_tile_value(board: &Board) -> u32 {
+    let mut tile_counter = HashMap::new();
+    // Gather counts of the number of different tile values
+    for row in 0..4 {
+        for col in 0..4 {
+            let counter = tile_counter
+                            .entry(board.get_value_at(row, col))
+                            .or_insert(0);
+            *counter += 1;
+        }
+    }
+    // Remove empty tiles
+    tile_counter.remove(&0);
+
+    // Pick the tile with the 3rd smallest number of entries in the board
+    // We don't want the largest tile to constantly spawn
+    let mut largest = (0, 0);
+    let mut next_largest = (0, 0);
+    let mut target = (0, 0);
+
+    for (key, value) in tile_counter.iter() {
+        if *value > largest.1 {
+            target = next_largest;
+            next_largest = largest;
+            largest = (*key, *value);
+        } else if (*value == largest.1) || (*value > next_largest.1) {
+            // Should really roll a die here to see if we swap if equal
+            target = next_largest;
+            next_largest = (*key, *value);
+        } else if (*value == next_largest.1) || (*value > target.1) {
+                target = (*key, *value);
+        }
+    }
+    target.0
+    
+}
