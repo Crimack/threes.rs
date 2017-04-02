@@ -8,11 +8,9 @@ rust:
 matrix:
   allow_failures:
     - rust: nightly
-script:
-  - cargo build --target x86_64-pc-windows-gnu
-  - cargo build --target x86_64-pc-windows-msvc
-  - cargo build --target x86_64-unknown-linux-gnu
-  - cargo test
-  - cargo build --target x86_64-unknown-linux-musl
-
+      
+os:
+  - linux
+  - osx
+    
 cache: cargo
