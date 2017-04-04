@@ -1,20 +1,9 @@
 extern crate rand;
 mod board;
 
-use std::process::Command;
 use std::io;
 
 use board::Board;
-
-
-fn clear()
-{
-    if !cfg!(target_os = "windows") {
-        let output = Command::new("clear")
-                    .output()
-                    .expect("failure to clear window");
-    }
-}
 
 fn handle_input(input: &str, board: &mut Board) -> bool {
     println!("{}", input);
@@ -67,6 +56,6 @@ Have fun!
             io::stdin().read_line(&mut input).expect("Failed to read line, something is bad");
             valid_input = handle_input(&input.trim(), &mut game_board);
         }
-        clear();
     }
+
 }

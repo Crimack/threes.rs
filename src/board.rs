@@ -1,12 +1,14 @@
 
 use rand::distributions::{IndependentSample, Range};
-use rand::thread_rng;
-
-use std::collections::HashMap;
+use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
 pub struct Board {
     state: [[u32; 4]; 4],
+    high_card: u32,
+    next_card: u32,
+    basic_cards: Vec<u32>,
+    bonus_cards: Vec<u32>,
     has_moves: bool
 }
 
@@ -18,25 +20,31 @@ impl Board {
                                                 [0; 4],
                                                 [0; 4]
                                              ];
+
+        let mut basic_stack = generate_basic_stack();                                     
         let between = Range::new(0, 4);
         let mut rng = thread_rng();
 
-        // The starting board starts with 3 1s, 3 2s and 3 3s at seemingly random places
-        for tile_type in 1..4 {
-            // Spawn 3 of them
-            for _ in 1..4 {
+        // The starting board starts 9 cards off the basic stack at random places
+        for _ in 0..9 {
                 let mut valid_place: bool = false;
                 while !valid_place {
                     let x = between.ind_sample(&mut rng);
                     let y = between.ind_sample(&mut rng);
                     if starting_state[x][y] == 0 {
-                        starting_state[x][y] = tile_type;
+                        starting_state[x][y] = basic_stack.pop().unwrap();
                         valid_place = true;
                     }
                 }
-            }
         }
-        Board { state: starting_state, has_moves: true } 
+
+        Board { state: starting_state,
+                high_card: 3, // Can't be anything higher at this point
+                next_card: basic_stack.pop().unwrap(), // Next card is guaranteed to be basic
+                basic_cards: basic_stack,
+                bonus_cards: Vec::new(), // Guaranteed to be empty
+                has_moves: true // Guaranteed to be playable
+                } 
     }
 
     pub fn move_up(&mut self) {
@@ -44,11 +52,15 @@ impl Board {
         for col in 0..4 {
             // Resolve from top to bottom, skipping final row
             for row in 0..3 {
-                let (collides, new_value) = handle_collisions(self.state[row][col], self.state[row + 1][col]);
-                if collides {
-                    self.state[row + 1][col] = 0;
-                    self.state[row][col] = new_value.unwrap();
-                }
+                let new_value = handle_collisions(self.state[row][col], self.state[row + 1][col]);
+                match new_value {
+                    Some(x) => {
+                        self.state[row + 1][col] = 0;
+                        self.state[row][col] = x;
+                        self.update_high_card(x);
+                    },
+                    _ => {},
+                };
             }
         }
 
@@ -61,7 +73,8 @@ impl Board {
         }
         let between = Range::new(0, possible_locations.len());
         let mut rng = thread_rng();
-        self.state[3][possible_locations[between.ind_sample(&mut rng)]] = generate_new_tile_value(&self);
+        let y = possible_locations[between.ind_sample(&mut rng)];
+        self.spawn_next_tile(3, y);
     }
 
     pub fn move_down(&mut self) {
@@ -69,11 +82,15 @@ impl Board {
         for col in 0..4 {
             // Resolve from bottom to top, skipping first row
             for row in (1..4).rev() {
-                let (collides, new_value) = handle_collisions(self.state[row][col], self.state[row - 1][col]);
-                if collides {
-                    self.state[row - 1][col] = 0;
-                    self.state[row][col] = new_value.unwrap();
-                }
+                let new_value = handle_collisions(self.state[row][col], self.state[row - 1][col]);
+                match new_value {
+                    Some(x) => {
+                        self.state[row - 1][col] = 0;
+                        self.state[row][col] = x;
+                        self.update_high_card(x);                
+                    },
+                    _ => {},
+                };
             }
         }
         // Spawn new tile in top row
@@ -85,7 +102,8 @@ impl Board {
         }
         let between = Range::new(0, possible_locations.len());
         let mut rng = thread_rng();
-        self.state[0][possible_locations[between.ind_sample(&mut rng)]] = generate_new_tile_value(&self);
+        let y = possible_locations[between.ind_sample(&mut rng)];
+        self.spawn_next_tile(0, y);
     }
 
     pub fn move_left(&mut self) {
@@ -93,11 +111,15 @@ impl Board {
         for row in 0..4 {
             // Resolve from left to right, skipping final column
             for col in 0..3 {
-                let (collides, new_value) = handle_collisions(self.state[row][col], self.state[row][col + 1]);
-                if collides {
+                let new_value = handle_collisions(self.state[row][col], self.state[row][col + 1]);
+                match new_value {
+                    Some(x) => {
                     self.state[row][col + 1] = 0;
-                    self.state[row][col] = new_value.unwrap();
-                }
+                    self.state[row][col] = x;
+                        self.update_high_card(x);                
+                    },
+                    _ => {},
+                };
             }
         }
 
@@ -110,7 +132,8 @@ impl Board {
         }
         let between = Range::new(0, possible_locations.len());
         let mut rng = thread_rng();
-        self.state[possible_locations[between.ind_sample(&mut rng)]][3] = generate_new_tile_value(&self);
+        let x = possible_locations[between.ind_sample(&mut rng)];
+        self.spawn_next_tile(x, 3);    
     }
 
     pub fn move_right(&mut self) {
@@ -118,11 +141,15 @@ impl Board {
         for row in 0..4 {
             // Resolve from right to left, skipping first column
             for col in (1..4).rev() {
-                let (collides, new_value) = handle_collisions(self.state[row][col], self.state[row][col - 1]);
-                if collides {
-                    self.state[row][col - 1] = 0;
-                    self.state[row][col] = new_value.unwrap();
-                }
+                let new_value = handle_collisions(self.state[row][col], self.state[row][col - 1]);
+                match new_value {
+                    Some(x) => {
+                        self.state[row][col - 1] = 0;
+                        self.state[row][col] = x;
+                        self.update_high_card(x);                
+                    },
+                    _ => {},
+                };
             }
         }
 
@@ -135,12 +162,32 @@ impl Board {
         }
         let between = Range::new(0, possible_locations.len());
         let mut rng = thread_rng();
-        self.state[possible_locations[between.ind_sample(&mut rng)]][0] = generate_new_tile_value(&self);    
+        let x = possible_locations[between.ind_sample(&mut rng)];
+        self.spawn_next_tile(x, 0);
     }
 
-    pub fn get_value_at(&self, x: usize, y: usize) -> u32 {
-        let result = self.state[x][y];
-        result
+    fn update_high_card(&mut self, new_card: u32) {
+        if new_card > self.high_card {
+            self.high_card = new_card;
+        }
+    }
+
+    fn spawn_next_tile(&mut self, x: usize, y: usize) {
+        self.state[x][y] = self.next_card;
+
+        let between = Range::new(0, 21);
+        let mut rng = thread_rng();
+        let new_tile = if self.high_card > 3 && between.ind_sample(&mut rng) == 7 {
+            self.bonus_cards = generate_bonus_stack(self.high_card);
+            self.bonus_cards.pop()
+        } else {
+            let temp = self.basic_cards.pop();
+            if self.basic_cards.len() == 0 {
+                self.basic_cards = generate_basic_stack();
+            }
+            temp
+        };
+        self.next_card = new_tile.unwrap();
     }
 
     pub fn has_moves(&self) -> bool {
@@ -158,55 +205,42 @@ impl Board {
                 }
             }
         }
-        print!("\n")
+        print!("\n");
+        println!("Next card: {}", self.next_card);
+        print!("\n\n\n")
     }
+
+
 }
 
-fn handle_collisions(x: u32, y: u32) -> (bool, Option<u32>) {
+fn handle_collisions(x: u32, y: u32) -> Option<u32> {
     if x == 0 {
-        (true, Some(y))
+        Some(y)
     } else if (x==1 && y==2) | (y==1 && x==2) {
-        (true, Some(3))
+        Some(3)
     } else if x == y && x > 2 && y > 2 {
-        (true, Some(x*2))
+        Some(x*2)
     } else {
-        (false, None)
+        None
     }
 }
 
-fn generate_new_tile_value(board: &Board) -> u32 {
-    let mut tile_counter = HashMap::new();
-    // Gather counts of the number of different tile values
-    for row in 0..4 {
-        for col in 0..4 {
-            let counter = tile_counter
-                            .entry(board.get_value_at(row, col))
-                            .or_insert(0);
-            *counter += 1;
-        }
-    }
-    // Remove empty tiles
-    tile_counter.remove(&0);
+fn generate_basic_stack() -> Vec<u32> {
+    let mut stack = vec![1,1,1,1,2,2,2,2,3,3,3,3];
+    let mut rng = thread_rng();
+    rng.shuffle(&mut stack);
+    stack
+}
 
-    // Pick the tile with the 3rd smallest number of entries in the board
-    // We don't want the largest tile to constantly spawn
-    let mut largest = (0, 0);
-    let mut next_largest = (0, 0);
-    let mut target = (0, 0);
-
-    for (key, value) in tile_counter.iter() {
-        if *value > largest.1 {
-            target = next_largest;
-            next_largest = largest;
-            largest = (*key, *value);
-        } else if (*value == largest.1) || (*value > next_largest.1) {
-            // Should really roll a die here to see if we swap if equal
-            target = next_largest;
-            next_largest = (*key, *value);
-        } else if (*value == next_largest.1) || (*value > target.1) {
-                target = (*key, *value);
-        }
+fn generate_bonus_stack(high_card: u32) -> Vec<u32> {
+    let mut stack: Vec<u32> = Vec::new();
+    let mut next_value = high_card / 8;
+    while next_value != 3 {
+        println!("I'm a filthy shitburglar");
+        stack.push(next_value);
+        next_value = next_value / 2;
     }
-    target.0
-    
+    let mut rng = thread_rng();
+    rng.shuffle(&mut stack);
+    stack
 }
