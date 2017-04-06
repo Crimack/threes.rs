@@ -177,7 +177,7 @@ impl Board {
 
         let between = Range::new(0, 21);
         let mut rng = thread_rng();
-        let new_tile = if self.high_card > 3 && between.ind_sample(&mut rng) == 7 {
+        let new_tile = if self.high_card >= 48 && between.ind_sample(&mut rng) == 7 {
             self.bonus_cards = generate_bonus_stack(self.high_card);
             self.bonus_cards.pop()
         } else {
@@ -237,7 +237,6 @@ fn generate_bonus_stack(high_card: u32) -> Vec<u32> {
     while next_value > 3 {
         stack.push(next_value);
         next_value = next_value / 2;
-        println!("{:?}", stack);
     }
     let mut rng = thread_rng();
     rng.shuffle(&mut stack);

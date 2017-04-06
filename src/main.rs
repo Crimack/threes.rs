@@ -6,7 +6,6 @@ use std::io;
 use board::Board;
 
 fn handle_input(input: &str, board: &mut Board) -> bool {
-    println!("{}", input);
     match input.to_uppercase().as_ref() {
         "W" => {
             board.move_up();
