@@ -5,3 +5,4 @@ authors = ["Chris McKee <cmckee41@qub.ac.uk>"]
 
 [dependencies]
 rand='*'
+getopts='*'

@@ -196,6 +196,21 @@ impl Board {
         self.next_card = new_tile.unwrap();
     }
 
+<<<<<<< HEAD
+=======
+    pub fn get_board(&self) -> &[[u32;4]] {
+        &self.state
+    }
+
+    pub fn has_moves(&self) -> bool {
+        self.has_moves
+    }
+
+    pub fn get_next_card(&self) -> u32 {
+        self.next_card
+    }
+
+>>>>>>> 13fca31... Minor refactorings, added user arguments
     pub fn print(&self) {
         for row in &self.state {
             println!();
