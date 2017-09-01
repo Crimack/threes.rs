@@ -53,8 +53,10 @@ Have fun!
         while !valid_input {
             let mut input = String::new();
             io::stdin().read_line(&mut input).expect("Failed to read line, something is bad");
-            valid_input = handle_input(&input.trim(), &mut game_board);
+            valid_input = handle_input(input.trim(), &mut game_board);
         }
     }
+
+    println!("You scored: {}", game_board.calculate_score());
 
 }

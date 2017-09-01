@@ -8,8 +8,7 @@ pub struct Board {
     high_card: u32,
     next_card: u32,
     basic_cards: Vec<u32>,
-    bonus_cards: Vec<u32>,
-    has_moves: bool
+    bonus_cards: Vec<u32>
 }
 
 impl Board {
@@ -21,7 +20,7 @@ impl Board {
                                                 [0; 4]
                                              ];
 
-        let mut basic_stack = generate_basic_stack();                                     
+        let mut basic_stack = generate_basic_stack();
         let between = Range::new(0, 4);
         let mut rng = thread_rng();
 
@@ -42,128 +41,136 @@ impl Board {
                 high_card: 3, // Can't be anything higher at this point
                 next_card: basic_stack.pop().unwrap(), // Next card is guaranteed to be basic
                 basic_cards: basic_stack,
-                bonus_cards: Vec::new(), // Guaranteed to be empty
-                has_moves: true // Guaranteed to be playable
+                bonus_cards: Vec::new() // Guaranteed to be empty
                 } 
     }
 
     pub fn move_up(&mut self) {
+        let mut moved = false;
         // Resolve by column from left to right
         for col in 0..4 {
             // Resolve from top to bottom, skipping final row
             for row in 0..3 {
-                let new_value = handle_collisions(self.state[row][col], self.state[row + 1][col]);
-                match new_value {
-                    Some(x) => {
-                        self.state[row + 1][col] = 0;
-                        self.state[row][col] = x;
-                        self.update_high_card(x);
-                    },
-                    _ => {},
+                if let Some(x) = handle_collisions(self.state[row][col], self.state[row + 1][col]) {
+                    self.state[row + 1][col] = 0;
+                    self.state[row][col] = x;
+                    self.update_high_card(x);
+                    moved = true;
                 };
             }
         }
 
-        // Spawn new tile in bottom row
-        let mut possible_locations = vec![];
-        for col in 0..4 {
-            if self.state[3][col] == 0 {
-                possible_locations.push(col);
+        if moved {
+            // Spawn new tile in bottom row
+            let mut possible_locations = vec![];
+            for col in 0..4 {
+                if self.state[3][col] == 0 {
+                    possible_locations.push(col);
+                }
             }
+            let between = Range::new(0, possible_locations.len());
+            let mut rng = thread_rng();
+            let y = possible_locations[between.ind_sample(&mut rng)];
+            self.spawn_next_tile(3, y);
+        } else {
+            println!("Invalid move");
         }
-        let between = Range::new(0, possible_locations.len());
-        let mut rng = thread_rng();
-        let y = possible_locations[between.ind_sample(&mut rng)];
-        self.spawn_next_tile(3, y);
     }
 
     pub fn move_down(&mut self) {
+        let mut moved = false;
         // Resolve by column from left to right
         for col in 0..4 {
             // Resolve from bottom to top, skipping first row
             for row in (1..4).rev() {
-                let new_value = handle_collisions(self.state[row][col], self.state[row - 1][col]);
-                match new_value {
-                    Some(x) => {
-                        self.state[row - 1][col] = 0;
-                        self.state[row][col] = x;
-                        self.update_high_card(x);                
-                    },
-                    _ => {},
+                if let Some(x) = handle_collisions(self.state[row][col], self.state[row - 1][col]) {
+                    self.state[row - 1][col] = 0;
+                    self.state[row][col] = x;
+                    self.update_high_card(x);
+                    moved = true;
                 };
             }
         }
-        // Spawn new tile in top row
-        let mut possible_locations = vec![];
-        for col in 0..4 {
-            if self.state[0][col] == 0 {
-                possible_locations.push(col);
+
+        if moved {
+            // Spawn new tile in top row
+            let mut possible_locations = vec![];
+            for col in 0..4 {
+                if self.state[0][col] == 0 {
+                    possible_locations.push(col);
+                }
             }
+            let between = Range::new(0, possible_locations.len());
+            let mut rng = thread_rng();
+            let y = possible_locations[between.ind_sample(&mut rng)];
+            self.spawn_next_tile(0, y);
+        } else {
+            println!("Invalid move");
         }
-        let between = Range::new(0, possible_locations.len());
-        let mut rng = thread_rng();
-        let y = possible_locations[between.ind_sample(&mut rng)];
-        self.spawn_next_tile(0, y);
     }
 
     pub fn move_left(&mut self) {
+        let mut moved = false;
         // Resolve by column from top to bottom
         for row in 0..4 {
             // Resolve from left to right, skipping final column
             for col in 0..3 {
-                let new_value = handle_collisions(self.state[row][col], self.state[row][col + 1]);
-                match new_value {
-                    Some(x) => {
+                if let Some(x) = handle_collisions(self.state[row][col], self.state[row][col + 1]) {
                     self.state[row][col + 1] = 0;
                     self.state[row][col] = x;
-                        self.update_high_card(x);                
-                    },
-                    _ => {},
+                    self.update_high_card(x);
+                    moved = true;
                 };
             }
         }
 
-        // Spawn new tile in right column
-        let mut possible_locations = vec![];
-        for row in 0..4 {
-            if self.state[row][3] == 0 {
-                possible_locations.push(row);
+        if moved {
+            // Spawn new tile in right column
+            let mut possible_locations = vec![];
+            for row in 0..4 {
+                if self.state[row][3] == 0 {
+                    possible_locations.push(row);
+                }
             }
+            let between = Range::new(0, possible_locations.len());
+            let mut rng = thread_rng();
+            let x = possible_locations[between.ind_sample(&mut rng)];
+            self.spawn_next_tile(x, 3);
+        } else {
+            println!("Invalid move");
         }
-        let between = Range::new(0, possible_locations.len());
-        let mut rng = thread_rng();
-        let x = possible_locations[between.ind_sample(&mut rng)];
-        self.spawn_next_tile(x, 3);    
     }
 
     pub fn move_right(&mut self) {
+        let mut moved = false;
         // Resolve by column from top to bottom
         for row in 0..4 {
             // Resolve from right to left, skipping first column
             for col in (1..4).rev() {
-                let new_value = handle_collisions(self.state[row][col], self.state[row][col - 1]);
-                match new_value {
-                    Some(x) => {
-                        self.state[row][col - 1] = 0;
-                        self.state[row][col] = x;
-                        self.update_high_card(x);                
-                    },
-                    _ => {},
+                if let Some(x) = handle_collisions(self.state[row][col], self.state[row][col - 1]) {
+                    self.state[row][col - 1] = 0;
+                    self.state[row][col] = x;
+                    self.update_high_card(x);
+                    moved = true;
                 };
             }
         }
 
-        // Spawn new tile in left column
-        let mut possible_locations = vec![];
-        for row in 0..4 {
-            if self.state[row][0] == 0 {
-                possible_locations.push(row);
+        if moved {
+            // Spawn new tile in left column
+            let mut possible_locations = vec![];
+            for row in 0..4 {
+                if self.state[row][0] == 0 {
+                    possible_locations.push(row);
+                }
             }
+            let between = Range::new(0, possible_locations.len());
+            let mut rng = thread_rng();
+            let x = possible_locations[between.ind_sample(&mut rng)];
+            self.spawn_next_tile(x, 0);
+        } else {
+            println!("Invalid move");
         }
-        let between = Range::new(0, possible_locations.len());
-        let mut rng = thread_rng();
-        let x = possible_locations[between.ind_sample(&mut rng)];
-        self.spawn_next_tile(x, 0);
     }
 
     fn update_high_card(&mut self, new_card: u32) {
@@ -181,7 +188,7 @@ impl Board {
             self.bonus_cards = generate_bonus_stack(self.high_card);
             self.bonus_cards.pop()
         } else {
-            if self.basic_cards.len() == 0 {
+            if self.basic_cards.is_empty() {
                 self.basic_cards = generate_basic_stack();
             }
             self.basic_cards.pop()
@@ -189,13 +196,9 @@ impl Board {
         self.next_card = new_tile.unwrap();
     }
 
-    pub fn has_moves(&self) -> bool {
-        self.has_moves
-    }
-
     pub fn print(&self) {
         for row in &self.state {
-            print!("\n");
+            println!();
             for num in row {
                 if *num == 0 {
                     print!("X\t")
@@ -204,11 +207,34 @@ impl Board {
                 }
             }
         }
-        print!("\n");
+        println!();
         println!("Next card: {}", self.next_card);
-        print!("\n\n\n")
+        println!("\n\n")
     }
 
+    pub fn has_moves(&self) -> bool {
+        // Check for vertical moves
+        for col in 0..4 {
+            for row in 0..3 {
+                if handle_collisions(self.state[row][col], self.state[row + 1][col]).is_some() {
+                    return true;
+                }
+            }
+        }
+        // Check for horizontal moves
+        for row in 0..4 {
+            for col in 0..3 {
+                if handle_collisions(self.state[row][col], self.state[row][col + 1]).is_some() {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    pub fn calculate_score(&self) -> u32 {
+        0
+    }
 
 }
 
@@ -236,12 +262,43 @@ fn generate_bonus_stack(high_card: u32) -> Vec<u32> {
     let mut next_value = high_card / 8;
     while next_value > 3 {
         stack.push(next_value);
-        next_value = next_value / 2;
+        next_value /= 2;
     }
     let mut rng = thread_rng();
     rng.shuffle(&mut stack);
     stack
 }
+
+#[test]
+fn test_new_board_has_moves() {
+    let board = Board::new();
+    assert_eq!(true, board.has_moves());
+}
+
+#[test]
+fn test_half_played_has_moves() {
+    let state: [[u32;4];4] = [
+        [192, 384, 1, 2],
+        [6,   3,   1, 3],
+        [192, 3,   1, 12],
+        [6,   12,  24, 6]
+    ];
+    let board = Board{state: state, high_card: 384, next_card: 3, basic_cards: vec![], bonus_cards: vec![]};
+    assert_eq!(true, board.has_moves());
+}
+
+#[test]
+fn test_full_board_no_moves() {
+    let state: [[u32;4];4] = [
+        [192, 384, 1, 1],
+        [6,   3,   1, 3],
+        [192, 48,  1, 12],
+        [6,   12,  24, 6]
+    ];
+    let board = Board{state: state, high_card: 384, next_card: 3, basic_cards: vec![], bonus_cards: vec![]};
+    assert_eq!(false, board.has_moves());
+}
+
 
 #[test]
 fn test_collision_x_zero() {
