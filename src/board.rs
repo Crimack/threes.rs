@@ -8,17 +8,12 @@ pub struct Board {
     high_card: u32,
     next_card: u32,
     basic_cards: Vec<u32>,
-    bonus_cards: Vec<u32>
+    bonus_cards: Vec<u32>,
 }
 
 impl Board {
     pub fn new() -> Board {
-        let mut starting_state: [[u32;4];4] = [
-                                                [0; 4],
-                                                [0; 4],
-                                                [0; 4],
-                                                [0; 4]
-                                             ];
+        let mut starting_state: [[u32; 4]; 4] = [[0; 4], [0; 4], [0; 4], [0; 4]];
 
         let mut basic_stack = generate_basic_stack();
         let between = Range::new(0, 4);
@@ -26,23 +21,24 @@ impl Board {
 
         // The starting board starts 9 cards off the basic stack at random places
         for _ in 0..9 {
-                let mut valid_place: bool = false;
-                while !valid_place {
-                    let x = between.ind_sample(&mut rng);
-                    let y = between.ind_sample(&mut rng);
-                    if starting_state[x][y] == 0 {
-                        starting_state[x][y] = basic_stack.pop().unwrap();
-                        valid_place = true;
-                    }
+            let mut valid_place: bool = false;
+            while !valid_place {
+                let x = between.ind_sample(&mut rng);
+                let y = between.ind_sample(&mut rng);
+                if starting_state[x][y] == 0 {
+                    starting_state[x][y] = basic_stack.pop().unwrap();
+                    valid_place = true;
                 }
+            }
         }
 
-        Board { state: starting_state,
-                high_card: 3, // Can't be anything higher at this point
-                next_card: basic_stack.pop().unwrap(), // Next card is guaranteed to be basic
-                basic_cards: basic_stack,
-                bonus_cards: Vec::new() // Guaranteed to be empty
-                } 
+        Board {
+            state: starting_state,
+            high_card: 3, // Can't be anything higher at this point
+            next_card: basic_stack.pop().unwrap(), // Next card is guaranteed to be basic
+            basic_cards: basic_stack,
+            bonus_cards: Vec::new(), // Guaranteed to be empty
+        }
     }
 
     pub fn move_up(&mut self) {
@@ -51,7 +47,11 @@ impl Board {
         for col in 0..4 {
             // Resolve from top to bottom, skipping final row
             for row in 0..3 {
-                if let Some(x) = handle_collisions(self.state[row][col], self.state[row + 1][col]) {
+                if let Some(x) = handle_collisions(
+                    self.state[row][col],
+                    self.state[row + 1][col],
+                )
+                {
                     self.state[row + 1][col] = 0;
                     self.state[row][col] = x;
                     self.update_high_card(x);
@@ -83,7 +83,11 @@ impl Board {
         for col in 0..4 {
             // Resolve from bottom to top, skipping first row
             for row in (1..4).rev() {
-                if let Some(x) = handle_collisions(self.state[row][col], self.state[row - 1][col]) {
+                if let Some(x) = handle_collisions(
+                    self.state[row][col],
+                    self.state[row - 1][col],
+                )
+                {
                     self.state[row - 1][col] = 0;
                     self.state[row][col] = x;
                     self.update_high_card(x);
@@ -115,7 +119,11 @@ impl Board {
         for row in 0..4 {
             // Resolve from left to right, skipping final column
             for col in 0..3 {
-                if let Some(x) = handle_collisions(self.state[row][col], self.state[row][col + 1]) {
+                if let Some(x) = handle_collisions(
+                    self.state[row][col],
+                    self.state[row][col + 1],
+                )
+                {
                     self.state[row][col + 1] = 0;
                     self.state[row][col] = x;
                     self.update_high_card(x);
@@ -147,7 +155,11 @@ impl Board {
         for row in 0..4 {
             // Resolve from right to left, skipping first column
             for col in (1..4).rev() {
-                if let Some(x) = handle_collisions(self.state[row][col], self.state[row][col - 1]) {
+                if let Some(x) = handle_collisions(
+                    self.state[row][col],
+                    self.state[row][col - 1],
+                )
+                {
                     self.state[row][col - 1] = 0;
                     self.state[row][col] = x;
                     self.update_high_card(x);
@@ -196,21 +208,14 @@ impl Board {
         self.next_card = new_tile.unwrap();
     }
 
-<<<<<<< HEAD
-=======
-    pub fn get_board(&self) -> &[[u32;4]] {
+    pub fn get_board(&self) -> &[[u32; 4]] {
         &self.state
-    }
-
-    pub fn has_moves(&self) -> bool {
-        self.has_moves
     }
 
     pub fn get_next_card(&self) -> u32 {
         self.next_card
     }
 
->>>>>>> 13fca31... Minor refactorings, added user arguments
     pub fn print(&self) {
         for row in &self.state {
             println!();
@@ -223,7 +228,6 @@ impl Board {
             }
         }
         println!();
-        println!("Next card: {}", self.next_card);
         println!("\n\n")
     }
 
@@ -247,26 +251,47 @@ impl Board {
         false
     }
 
-    pub fn calculate_score(&self) -> u32 {
-        0
-    }
+    pub fn calculate_score(&self) -> u64 {
+        let mut score = 0;
+        for row in self.get_board().iter() {
+            for tile in row.iter() {
+                // 1s and 2s are not worth points
+                if *tile == 1 || *tile == 2 {
+                    continue;
+                }
+                score += 3u64.pow(calculate_coefficient(*tile));
+            }
+        }
 
+        return score;
+    }
+}
+
+fn calculate_coefficient(x: u32) -> u32 {
+    // There's probably a much more elegant way of doing this
+    let mut y = x;
+    let mut coefficient = 1;
+    while y > 3 {
+        y /= 2;
+        coefficient += 1;
+    }
+    return coefficient;
 }
 
 fn handle_collisions(x: u32, y: u32) -> Option<u32> {
     if x == 0 {
         Some(y)
-    } else if (x==1 && y==2) | (y==1 && x==2) {
+    } else if (x == 1 && y == 2) | (y == 1 && x == 2) {
         Some(3)
     } else if x == y && x > 2 && y > 2 {
-        Some(x*2)
+        Some(x * 2)
     } else {
         None
     }
 }
 
 fn generate_basic_stack() -> Vec<u32> {
-    let mut stack = vec![1,1,1,1,2,2,2,2,3,3,3,3];
+    let mut stack = vec![1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3];
     let mut rng = thread_rng();
     rng.shuffle(&mut stack);
     stack
@@ -292,27 +317,102 @@ fn test_new_board_has_moves() {
 
 #[test]
 fn test_half_played_has_moves() {
-    let state: [[u32;4];4] = [
+    let state: [[u32; 4]; 4] = [
         [192, 384, 1, 2],
-        [6,   3,   1, 3],
-        [192, 3,   1, 12],
-        [6,   12,  24, 6]
+        [6, 3, 1, 3],
+        [192, 3, 1, 12],
+        [6, 12, 24, 6],
     ];
-    let board = Board{state: state, high_card: 384, next_card: 3, basic_cards: vec![], bonus_cards: vec![]};
+    let board = Board {
+        state: state,
+        high_card: 384,
+        next_card: 3,
+        basic_cards: vec![],
+        bonus_cards: vec![],
+    };
     assert_eq!(true, board.has_moves());
 }
 
 #[test]
 fn test_full_board_no_moves() {
-    let state: [[u32;4];4] = [
+    let state: [[u32; 4]; 4] = [
         [192, 384, 1, 1],
-        [6,   3,   1, 3],
-        [192, 48,  1, 12],
-        [6,   12,  24, 6]
+        [6, 3, 1, 3],
+        [192, 48, 1, 12],
+        [6, 12, 24, 6],
     ];
-    let board = Board{state: state, high_card: 384, next_card: 3, basic_cards: vec![], bonus_cards: vec![]};
+    let board = Board {
+        state: state,
+        high_card: 384,
+        next_card: 3,
+        basic_cards: vec![],
+        bonus_cards: vec![],
+    };
     assert_eq!(false, board.has_moves());
 }
+
+#[test]
+fn test_calculate_score_zero() {
+    let state: [[u32; 4]; 4] = [[1, 2, 1, 1], [2, 2, 1, 1], [2, 2, 1, 2], [2, 1, 2, 1]];
+    let board = Board {
+        state: state,
+        high_card: 2,
+        next_card: 3,
+        basic_cards: vec![],
+        bonus_cards: vec![],
+    };
+    assert_eq!(0, board.calculate_score());
+}
+
+#[test]
+fn test_calculate_score_low() {
+    let state: [[u32; 4]; 4] = [[3, 6, 3, 2], [2, 3, 6, 3], [3, 12, 1, 6], [12, 48, 6, 3]];
+    let board = Board {
+        state: state,
+        high_card: 384,
+        next_card: 3,
+        basic_cards: vec![],
+        bonus_cards: vec![],
+    };
+    assert_eq!(351, board.calculate_score());
+}
+
+#[test]
+fn test_calculate_score_mid() {
+    let state: [[u32; 4]; 4] = [
+        [1, 3, 48, 1],
+        [6, 2, 12, 24],
+        [3, 6, 24, 2],
+        [768, 384, 96, 3],
+    ];
+    let board = Board {
+        state: state,
+        high_card: 384,
+        next_card: 3,
+        basic_cards: vec![],
+        bonus_cards: vec![],
+    };
+    assert_eq!(27432, board.calculate_score());
+}
+
+#[test]
+fn test_calculate_score_high() {
+    let state: [[u32; 4]; 4] = [
+        [2, 3, 96, 3],
+        [12, 6, 48, 2],
+        [6, 48, 24, 6],
+        [1536, 768, 384, 192],
+    ];
+    let board = Board {
+        state: state,
+        high_card: 1536,
+        next_card: 3,
+        basic_cards: vec![],
+        bonus_cards: vec![],
+    };
+    assert_eq!(88836, board.calculate_score());
+}
+
 
 
 #[test]
@@ -396,5 +496,3 @@ fn test_bonus_stack_384() {
     assert_eq!(stack[2], 24);
     assert_eq!(stack[3], 48);
 }
-
-
