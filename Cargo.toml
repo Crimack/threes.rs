@@ -2,7 +2,9 @@
 name = "threes"
 version = "0.1.0"
 authors = ["Chris McKee <cmckee41@qub.ac.uk>"]
+build = "build.rs"
 
 [dependencies]
-rand='*'
-getopts='*'
+rand = "*"
+getopts = "*"
+sdl2 = "0.30"

@@ -262,8 +262,7 @@ impl Board {
                 score += 3u64.pow(calculate_coefficient(*tile));
             }
         }
-
-        return score;
+        score
     }
 }
 
@@ -275,7 +274,7 @@ fn calculate_coefficient(x: u32) -> u32 {
         y /= 2;
         coefficient += 1;
     }
-    return coefficient;
+    coefficient
 }
 
 fn handle_collisions(x: u32, y: u32) -> Option<u32> {

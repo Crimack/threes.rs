@@ -1,6 +1,9 @@
-extern crate rand;
 extern crate getopts;
+extern crate rand;
+extern crate sdl2;
+
 mod board;
+mod gui;
 
 use std::io;
 use std::env;
@@ -8,6 +11,7 @@ use std::env;
 use getopts::Options;
 
 use board::Board;
+use gui::new_game;
 
 fn handle_input(input: &str, board: &mut Board) -> bool {
     match input.to_uppercase().as_ref() {
@@ -34,7 +38,7 @@ fn handle_input(input: &str, board: &mut Board) -> bool {
     }
 }
 
-fn print_help(program: &str, opts: Options) {
+fn print_help(program: &str, opts: &Options) {
     let brief = format!("Usage: {} FILE [options]", program);
     println!("{}", opts.usage(&brief));
     println!(
@@ -52,6 +56,25 @@ Rules:
 Have fun!
 "
     );
+}
+
+fn terminal_game() {
+    let mut game_board = Board::new();
+    while game_board.has_moves() {
+        game_board.print();
+        println!("Next card: {}", game_board.get_next_card());
+        let mut valid_input = false;
+        while !valid_input {
+            let mut input = String::new();
+            io::stdin().read_line(&mut input).expect(
+                "Failed to read line, something is bad",
+            );
+            valid_input = handle_input(input.trim(), &mut game_board);
+        }
+    }
+    game_board.print();
+    println!("Game over!");
+    println!("You scored: {}", game_board.calculate_score());
 }
 
 
@@ -73,31 +96,13 @@ in a fresh terminal, or one that you don't mind having repeatedly wiped.",
         Err(f) => panic!(f.to_string()),
     };
     if matches.opt_present("h") {
-        print_help(&program, opts);
+        print_help(&program, &opts);
         return;
     }
 
-    let mut game_board = Board::new();
-
     if matches.opt_present("t") {
-        while game_board.has_moves() {
-            // CLI game
-            game_board.print();
-            println!("Next card: {}", game_board.get_next_card());
-            let mut valid_input = false;
-            while !valid_input {
-                let mut input = String::new();
-                io::stdin().read_line(&mut input).expect(
-                    "Failed to read line, something is bad",
-                );
-                valid_input = handle_input(input.trim(), &mut game_board);
-            }
-        }
-        game_board.print();
-        println!("Game over!");
-        println!("You scored: {}", game_board.calculate_score());
-
+        terminal_game();
     } else {
-        // Put the gui stuff here
+        new_game();
     }
 }
