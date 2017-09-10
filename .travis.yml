@@ -10,8 +10,15 @@ matrix:
     - rust: nightly
       
 os:
-  - windows
   - linux
   - osx
     
 cache: cargo
+
+addons:
+  apt:
+    packages:
+      - libsdl2-dev
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install sdl2; fi
