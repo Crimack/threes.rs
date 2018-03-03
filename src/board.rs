@@ -1,4 +1,3 @@
-
 use rand::distributions::{IndependentSample, Range};
 use rand::{thread_rng, Rng};
 
@@ -47,11 +46,7 @@ impl Board {
         for col in 0..4 {
             // Resolve from top to bottom, skipping final row
             for row in 0..3 {
-                if let Some(x) = handle_collisions(
-                    self.state[row][col],
-                    self.state[row + 1][col],
-                )
-                {
+                if let Some(x) = handle_collisions(self.state[row][col], self.state[row + 1][col]) {
                     self.state[row + 1][col] = 0;
                     self.state[row][col] = x;
                     self.update_high_card(x);
@@ -83,11 +78,7 @@ impl Board {
         for col in 0..4 {
             // Resolve from bottom to top, skipping first row
             for row in (1..4).rev() {
-                if let Some(x) = handle_collisions(
-                    self.state[row][col],
-                    self.state[row - 1][col],
-                )
-                {
+                if let Some(x) = handle_collisions(self.state[row][col], self.state[row - 1][col]) {
                     self.state[row - 1][col] = 0;
                     self.state[row][col] = x;
                     self.update_high_card(x);
@@ -119,11 +110,7 @@ impl Board {
         for row in 0..4 {
             // Resolve from left to right, skipping final column
             for col in 0..3 {
-                if let Some(x) = handle_collisions(
-                    self.state[row][col],
-                    self.state[row][col + 1],
-                )
-                {
+                if let Some(x) = handle_collisions(self.state[row][col], self.state[row][col + 1]) {
                     self.state[row][col + 1] = 0;
                     self.state[row][col] = x;
                     self.update_high_card(x);
@@ -155,11 +142,7 @@ impl Board {
         for row in 0..4 {
             // Resolve from right to left, skipping first column
             for col in (1..4).rev() {
-                if let Some(x) = handle_collisions(
-                    self.state[row][col],
-                    self.state[row][col - 1],
-                )
-                {
+                if let Some(x) = handle_collisions(self.state[row][col], self.state[row][col - 1]) {
                     self.state[row][col - 1] = 0;
                     self.state[row][col] = x;
                     self.update_high_card(x);
@@ -412,8 +395,6 @@ fn test_calculate_score_high() {
     assert_eq!(88836, board.calculate_score());
 }
 
-
-
 #[test]
 fn test_collision_x_zero() {
     let (x, y) = (0, 3);
@@ -457,7 +438,6 @@ fn test_basic_stack() {
     assert_eq!(stack[0], 1);
     assert_eq!(stack[4], 2);
     assert_eq!(stack[8], 3);
-
 }
 
 #[test]

@@ -1,4 +1,5 @@
 extern crate getopts;
+extern crate piston-window;
 extern crate rand;
 extern crate sdl2;
 
@@ -66,9 +67,9 @@ fn terminal_game() {
         let mut valid_input = false;
         while !valid_input {
             let mut input = String::new();
-            io::stdin().read_line(&mut input).expect(
-                "Failed to read line, something is bad",
-            );
+            io::stdin()
+                .read_line(&mut input)
+                .expect("Failed to read line, something is bad");
             valid_input = handle_input(input.trim(), &mut game_board);
         }
     }
@@ -76,7 +77,6 @@ fn terminal_game() {
     println!("Game over!");
     println!("You scored: {}", game_board.calculate_score());
 }
-
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -87,7 +87,7 @@ fn main() {
         "t",
         "terminal",
         "run as a playable version in the terminal. It's probably best to play this\
-in a fresh terminal, or one that you don't mind having repeatedly wiped.",
+         in a fresh terminal, or one that you don't mind having repeatedly wiped.",
     );
     opts.optflag("h", "help", "print the help menu");
 
