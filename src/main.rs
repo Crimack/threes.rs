@@ -1,5 +1,4 @@
 extern crate getopts;
-extern crate piston-window;
 extern crate rand;
 extern crate sdl2;
 

@@ -1,4 +1,5 @@
-use rand::distributions::{IndependentSample, Range};
+use rand::distributions::Distribution;
+use rand::distributions::uniform::Uniform;
 use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
@@ -15,15 +16,15 @@ impl Board {
         let mut starting_state: [[u32; 4]; 4] = [[0; 4], [0; 4], [0; 4], [0; 4]];
 
         let mut basic_stack = generate_basic_stack();
-        let between = Range::new(0, 4);
+        let between = Uniform::new(0, 4);
         let mut rng = thread_rng();
 
         // The starting board starts 9 cards off the basic stack at random places
         for _ in 0..9 {
             let mut valid_place: bool = false;
             while !valid_place {
-                let x = between.ind_sample(&mut rng);
-                let y = between.ind_sample(&mut rng);
+                let x = between.sample(&mut rng);
+                let y = between.sample(&mut rng);
                 if starting_state[x][y] == 0 {
                     starting_state[x][y] = basic_stack.pop().unwrap();
                     valid_place = true;
@@ -63,9 +64,9 @@ impl Board {
                     possible_locations.push(col);
                 }
             }
-            let between = Range::new(0, possible_locations.len());
+            let between = Uniform::new(0, possible_locations.len());
             let mut rng = thread_rng();
-            let y = possible_locations[between.ind_sample(&mut rng)];
+            let y = possible_locations[between.sample(&mut rng)];
             self.spawn_next_tile(3, y);
         } else {
             println!("Invalid move");
@@ -95,9 +96,9 @@ impl Board {
                     possible_locations.push(col);
                 }
             }
-            let between = Range::new(0, possible_locations.len());
+            let between = Uniform::new(0, possible_locations.len());
             let mut rng = thread_rng();
-            let y = possible_locations[between.ind_sample(&mut rng)];
+            let y = possible_locations[between.sample(&mut rng)];
             self.spawn_next_tile(0, y);
         } else {
             println!("Invalid move");
@@ -127,9 +128,9 @@ impl Board {
                     possible_locations.push(row);
                 }
             }
-            let between = Range::new(0, possible_locations.len());
+            let between = Uniform::new(0, possible_locations.len());
             let mut rng = thread_rng();
-            let x = possible_locations[between.ind_sample(&mut rng)];
+            let x = possible_locations[between.sample(&mut rng)];
             self.spawn_next_tile(x, 3);
         } else {
             println!("Invalid move");
@@ -159,9 +160,9 @@ impl Board {
                     possible_locations.push(row);
                 }
             }
-            let between = Range::new(0, possible_locations.len());
+            let between = Uniform::new(0, possible_locations.len());
             let mut rng = thread_rng();
-            let x = possible_locations[between.ind_sample(&mut rng)];
+            let x = possible_locations[between.sample(&mut rng)];
             self.spawn_next_tile(x, 0);
         } else {
             println!("Invalid move");
@@ -177,9 +178,9 @@ impl Board {
     fn spawn_next_tile(&mut self, x: usize, y: usize) {
         self.state[x][y] = self.next_card;
 
-        let between = Range::new(0, 21);
+        let between = Uniform::new(0, 21);
         let mut rng = thread_rng();
-        let new_tile = if self.high_card >= 48 && between.ind_sample(&mut rng) == 7 {
+        let new_tile = if self.high_card >= 48 && between.sample(&mut rng) == 7 {
             self.bonus_cards = generate_bonus_stack(self.high_card);
             self.bonus_cards.pop()
         } else {
