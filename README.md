@@ -1,7 +1,14 @@
 # threes.rs
 [![Build Status](https://travis-ci.org/Crimack/threes.rs.svg?branch=master)](https://travis-ci.org/Crimack/threes.rs)
 
-A clone of my favourite game, [Threes](http://asherv.com/threes/). Prints output of the board to the command line, and also takes input through stdio
+A clone of my favourite game, [Threes](http://asherv.com/threes/). Can be played on a UI, or through the terminal!
+
+Terminal:
+![Terminal Screenshot](./terminal.png)
+
+GUI:
+![UI Screenshot](./gui.png)
+
 
 ## How to play:
 
