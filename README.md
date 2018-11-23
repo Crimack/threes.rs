@@ -4,9 +4,11 @@
 A clone of my favourite game, [Threes](http://asherv.com/threes/). Can be played on a UI, or through the terminal!
 
 Terminal:
+
 ![Terminal Screenshot](./terminal.png)
 
 GUI:
+
 ![UI Screenshot](./gui.png)
 
 
