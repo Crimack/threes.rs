@@ -5,8 +5,11 @@ authors = ["Chris McKee <cmckee41@qub.ac.uk>"]
 build = "build.rs"
 
 [dependencies]
-rand = "*"
+rand = "0.6"
 getopts = "*"
+
+[build-dependencies]
+zip = "0.4.0"
 
 [dependencies.sdl2]
 version = "0.30"

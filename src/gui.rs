@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use sdl2;
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
@@ -6,9 +5,9 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
+use std::collections::HashMap;
 
 use board::Board;
-
 
 use std::{thread, time};
 
@@ -47,20 +46,84 @@ impl<'a> ThreesWindow {
         let texture_creator = self.canvas.texture_creator();
 
         let mut assets = HashMap::new();
-        assets.insert(0, texture_creator.load_texture("./resources/zero.png").unwrap());
-        assets.insert(1, texture_creator.load_texture("./resources/one.png").unwrap());
-        assets.insert(2, texture_creator.load_texture("./resources/two.png").unwrap());
-        assets.insert(3, texture_creator.load_texture("./resources/three.png").unwrap());
-        assets.insert(6, texture_creator.load_texture("./resources/six.png").unwrap());
-        assets.insert(12, texture_creator.load_texture("./resources/twelve.png").unwrap());
-        assets.insert(24, texture_creator.load_texture("./resources/twenty_four.png").unwrap());
-        assets.insert(48, texture_creator.load_texture("./resources/forty_eight.png").unwrap());
-        assets.insert(96, texture_creator.load_texture("./resources/ninety_six.png").unwrap());
-        assets.insert(192, texture_creator.load_texture("./resources/one_nine_two.png").unwrap());
-        assets.insert(384, texture_creator.load_texture("./resources/three_eight_four.png").unwrap());
-        assets.insert(762, texture_creator.load_texture("./resources/seven_six_two.png").unwrap());
-        assets.insert(1524, texture_creator.load_texture("./resources/one_five_two_four.png").unwrap());
-        assets.insert(3048, texture_creator.load_texture("./resources/three_zero_four_eight.png").unwrap());
+        assets.insert(
+            0,
+            texture_creator
+                .load_texture("./resources/zero.png")
+                .unwrap(),
+        );
+        assets.insert(
+            1,
+            texture_creator.load_texture("./resources/one.png").unwrap(),
+        );
+        assets.insert(
+            2,
+            texture_creator.load_texture("./resources/two.png").unwrap(),
+        );
+        assets.insert(
+            3,
+            texture_creator
+                .load_texture("./resources/three.png")
+                .unwrap(),
+        );
+        assets.insert(
+            6,
+            texture_creator.load_texture("./resources/six.png").unwrap(),
+        );
+        assets.insert(
+            12,
+            texture_creator
+                .load_texture("./resources/twelve.png")
+                .unwrap(),
+        );
+        assets.insert(
+            24,
+            texture_creator
+                .load_texture("./resources/twenty_four.png")
+                .unwrap(),
+        );
+        assets.insert(
+            48,
+            texture_creator
+                .load_texture("./resources/forty_eight.png")
+                .unwrap(),
+        );
+        assets.insert(
+            96,
+            texture_creator
+                .load_texture("./resources/ninety_six.png")
+                .unwrap(),
+        );
+        assets.insert(
+            192,
+            texture_creator
+                .load_texture("./resources/one_nine_two.png")
+                .unwrap(),
+        );
+        assets.insert(
+            384,
+            texture_creator
+                .load_texture("./resources/three_eight_four.png")
+                .unwrap(),
+        );
+        assets.insert(
+            762,
+            texture_creator
+                .load_texture("./resources/seven_six_two.png")
+                .unwrap(),
+        );
+        assets.insert(
+            1524,
+            texture_creator
+                .load_texture("./resources/one_five_two_four.png")
+                .unwrap(),
+        );
+        assets.insert(
+            3048,
+            texture_creator
+                .load_texture("./resources/three_zero_four_eight.png")
+                .unwrap(),
+        );
 
         let mut event_pump = self.canvas.window().subsystem().sdl().event_pump().unwrap();
         'game: loop {
@@ -84,7 +147,21 @@ impl<'a> ThreesWindow {
                         break;
                     }
                     Event::KeyDown {
+                        keycode: Some(Keycode::Up),
+                        ..
+                    } => {
+                        self.board.move_up();
+                        break;
+                    }
+                    Event::KeyDown {
                         keycode: Some(Keycode::A),
+                        ..
+                    } => {
+                        self.board.move_left();
+                        break;
+                    }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Left),
                         ..
                     } => {
                         self.board.move_left();
@@ -98,7 +175,21 @@ impl<'a> ThreesWindow {
                         break;
                     }
                     Event::KeyDown {
+                        keycode: Some(Keycode::Down),
+                        ..
+                    } => {
+                        self.board.move_down();
+                        break;
+                    }
+                    Event::KeyDown {
                         keycode: Some(Keycode::D),
+                        ..
+                    } => {
+                        self.board.move_right();
+                        break;
+                    }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Right),
                         ..
                     } => {
                         self.board.move_right();
@@ -115,12 +206,17 @@ impl<'a> ThreesWindow {
             let state = self.board.get_board();
             for (row_num, row) in state.iter().enumerate() {
                 for (col_num, col) in row.iter().enumerate() {
-                    self.canvas.copy(assets.get(col).unwrap(), None, Rect::new(
-                            10 + (100 * col_num) as i32,
-                            10 + (100 * row_num) as i32,
-                            100,
-                            100,
-                        ))
+                    self.canvas
+                        .copy(
+                            assets.get(col).unwrap(),
+                            None,
+                            Rect::new(
+                                10 + (100 * col_num) as i32,
+                                10 + (100 * row_num) as i32,
+                                100,
+                                100,
+                            ),
+                        )
                         .expect("Failed to draw rect");
                 }
             }

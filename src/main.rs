@@ -5,8 +5,8 @@ extern crate sdl2;
 mod board;
 mod gui;
 
-use std::io;
 use std::env;
+use std::io;
 
 use getopts::Options;
 

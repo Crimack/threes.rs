@@ -1,6 +1,7 @@
-use rand::distributions::Distribution;
-use rand::distributions::uniform::Uniform;
-use rand::{thread_rng, Rng};
+use rand::distributions::{Distribution, Uniform};
+use rand::prelude::ThreadRng;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 
 #[derive(Debug)]
 pub struct Board {
@@ -9,6 +10,7 @@ pub struct Board {
     next_card: u32,
     basic_cards: Vec<u32>,
     bonus_cards: Vec<u32>,
+    rng: ThreadRng,
 }
 
 impl Board {
@@ -38,6 +40,7 @@ impl Board {
             next_card: basic_stack.pop().unwrap(), // Next card is guaranteed to be basic
             basic_cards: basic_stack,
             bonus_cards: Vec::new(), // Guaranteed to be empty
+            rng,
         }
     }
 
@@ -65,8 +68,8 @@ impl Board {
                 }
             }
             let between = Uniform::new(0, possible_locations.len());
-            let mut rng = thread_rng();
-            let y = possible_locations[between.sample(&mut rng)];
+
+            let y = possible_locations[between.sample(&mut self.rng)];
             self.spawn_next_tile(3, y);
         } else {
             println!("Invalid move");
@@ -97,8 +100,7 @@ impl Board {
                 }
             }
             let between = Uniform::new(0, possible_locations.len());
-            let mut rng = thread_rng();
-            let y = possible_locations[between.sample(&mut rng)];
+            let y = possible_locations[between.sample(&mut self.rng)];
             self.spawn_next_tile(0, y);
         } else {
             println!("Invalid move");
@@ -129,8 +131,7 @@ impl Board {
                 }
             }
             let between = Uniform::new(0, possible_locations.len());
-            let mut rng = thread_rng();
-            let x = possible_locations[between.sample(&mut rng)];
+            let x = possible_locations[between.sample(&mut self.rng)];
             self.spawn_next_tile(x, 3);
         } else {
             println!("Invalid move");
@@ -161,8 +162,8 @@ impl Board {
                 }
             }
             let between = Uniform::new(0, possible_locations.len());
-            let mut rng = thread_rng();
-            let x = possible_locations[between.sample(&mut rng)];
+
+            let x = possible_locations[between.sample(&mut self.rng)];
             self.spawn_next_tile(x, 0);
         } else {
             println!("Invalid move");
@@ -179,8 +180,7 @@ impl Board {
         self.state[x][y] = self.next_card;
 
         let between = Uniform::new(0, 21);
-        let mut rng = thread_rng();
-        let new_tile = if self.high_card >= 48 && between.sample(&mut rng) == 7 {
+        let new_tile = if self.high_card >= 48 && between.sample(&mut self.rng) == 7 {
             self.bonus_cards = generate_bonus_stack(self.high_card);
             self.bonus_cards.pop()
         } else {
@@ -276,7 +276,7 @@ fn handle_collisions(x: u32, y: u32) -> Option<u32> {
 fn generate_basic_stack() -> Vec<u32> {
     let mut stack = vec![1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3];
     let mut rng = thread_rng();
-    rng.shuffle(&mut stack);
+    stack.shuffle(&mut rng);
     stack
 }
 
@@ -288,7 +288,7 @@ fn generate_bonus_stack(high_card: u32) -> Vec<u32> {
         next_value /= 2;
     }
     let mut rng = thread_rng();
-    rng.shuffle(&mut stack);
+    stack.shuffle(&mut rng);
     stack
 }
 
@@ -312,6 +312,7 @@ fn test_half_played_has_moves() {
         next_card: 3,
         basic_cards: vec![],
         bonus_cards: vec![],
+        rng: thread_rng(),
     };
     assert_eq!(true, board.has_moves());
 }
@@ -330,6 +331,7 @@ fn test_full_board_no_moves() {
         next_card: 3,
         basic_cards: vec![],
         bonus_cards: vec![],
+        rng: thread_rng(),
     };
     assert_eq!(false, board.has_moves());
 }
@@ -343,6 +345,7 @@ fn test_calculate_score_zero() {
         next_card: 3,
         basic_cards: vec![],
         bonus_cards: vec![],
+        rng: thread_rng(),
     };
     assert_eq!(0, board.calculate_score());
 }
@@ -356,6 +359,7 @@ fn test_calculate_score_low() {
         next_card: 3,
         basic_cards: vec![],
         bonus_cards: vec![],
+        rng: thread_rng(),
     };
     assert_eq!(351, board.calculate_score());
 }
@@ -374,6 +378,7 @@ fn test_calculate_score_mid() {
         next_card: 3,
         basic_cards: vec![],
         bonus_cards: vec![],
+        rng: thread_rng(),
     };
     assert_eq!(27432, board.calculate_score());
 }
@@ -392,6 +397,7 @@ fn test_calculate_score_high() {
         next_card: 3,
         basic_cards: vec![],
         bonus_cards: vec![],
+        rng: thread_rng(),
     };
     assert_eq!(88836, board.calculate_score());
 }
