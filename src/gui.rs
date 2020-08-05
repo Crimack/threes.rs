@@ -2,9 +2,11 @@ use sdl2;
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
 use sdl2::keyboard::Keycode;
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
+use sdl2::EventPump;
 use std::collections::HashMap;
 
 use board::Board;
@@ -14,6 +16,12 @@ use std::{thread, time};
 struct ThreesWindow {
     board: Board,
     canvas: Canvas<Window>,
+}
+
+enum PostGameOption {
+    Quit,
+    Restart,
+    DisplayScore,
 }
 
 impl<'a> ThreesWindow {
@@ -44,7 +52,12 @@ impl<'a> ThreesWindow {
 
     fn play(&mut self) {
         let texture_creator = self.canvas.texture_creator();
+        let ttf_context = sdl2::ttf::init().unwrap();
+        let font = ttf_context
+            .load_font("./resources/font/Raleway-Black.ttf", 64)
+            .unwrap();
 
+        // TODO: Work out how to move this into a method without fighting the lifetime
         let mut assets = HashMap::new();
         assets.insert(
             0,
@@ -127,81 +140,51 @@ impl<'a> ThreesWindow {
 
         let mut event_pump = self.canvas.window().subsystem().sdl().event_pump().unwrap();
         'game: loop {
-            if !self.board.has_moves() {
-                break 'game;
-            }
-            for event in event_pump.poll_iter() {
-                match event {
-                    Event::Quit { .. }
-                    | Event::KeyDown {
-                        keycode: Some(Keycode::Escape),
-                        ..
-                    } => {
-                        break 'game;
+            if !self.board.has_moves() || !self.handle_input(&mut event_pump) {
+                // if true {
+                self.canvas.set_draw_color(Color::RGB(255, 255, 255));
+                self.canvas.clear();
+
+                let score_str = format!("Score: {}", self.board.calculate_score());
+                let score_surface = font
+                    .render(&score_str)
+                    .blended_wrapped(Color::RGB(0, 0, 0), 500)
+                    .unwrap();
+                let score_texture = texture_creator
+                    .create_texture_from_surface(&score_surface)
+                    .unwrap();
+
+                let description_str = "Press r to start a new game, or q/ESC to quit";
+                let desc_surface = font
+                    .render(&description_str)
+                    .blended_wrapped(Color::RGB(0, 0, 0), 500)
+                    .unwrap();
+                let desc_texture = texture_creator
+                    .create_texture_from_surface(&desc_surface)
+                    .unwrap();
+
+                'end: loop {
+                    match self.handle_end_input(&mut event_pump) {
+                        PostGameOption::Quit => {
+                            break 'game;
+                        }
+                        PostGameOption::DisplayScore => {}
+                        PostGameOption::Restart => {
+                            self.board = Board::new();
+                            break 'end;
+                        }
                     }
-                    Event::KeyDown {
-                        keycode: Some(Keycode::W),
-                        ..
-                    } => {
-                        self.board.move_up();
-                        break;
-                    }
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Up),
-                        ..
-                    } => {
-                        self.board.move_up();
-                        break;
-                    }
-                    Event::KeyDown {
-                        keycode: Some(Keycode::A),
-                        ..
-                    } => {
-                        self.board.move_left();
-                        break;
-                    }
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Left),
-                        ..
-                    } => {
-                        self.board.move_left();
-                        break;
-                    }
-                    Event::KeyDown {
-                        keycode: Some(Keycode::S),
-                        ..
-                    } => {
-                        self.board.move_down();
-                        break;
-                    }
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Down),
-                        ..
-                    } => {
-                        self.board.move_down();
-                        break;
-                    }
-                    Event::KeyDown {
-                        keycode: Some(Keycode::D),
-                        ..
-                    } => {
-                        self.board.move_right();
-                        break;
-                    }
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Right),
-                        ..
-                    } => {
-                        self.board.move_right();
-                        break;
-                    }
-                    Event::AppDidEnterBackground { .. } => {
-                        thread::sleep(time::Duration::from_millis(250));
-                    }
-                    _ => {}
+                    self.canvas
+                        .copy(&score_texture, None, Rect::new(50, 50, 350, 100))
+                        .unwrap();
+                    self.canvas
+                        .copy(&desc_texture, None, Rect::new(50, 200, 350, 200))
+                        .unwrap();
+                    self.canvas.present();
+
+                    thread::sleep(time::Duration::from_millis(10));
                 }
             }
-
             // Redraw the board onto the screen
             let state = self.board.get_board();
             for (row_num, row) in state.iter().enumerate() {
@@ -224,6 +207,106 @@ impl<'a> ThreesWindow {
             self.canvas.present();
             thread::sleep(time::Duration::from_millis(10));
         }
+    }
+
+    fn handle_input(&mut self, event_pump: &mut EventPump) -> bool {
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Q),
+                    ..
+                } => {
+                    return false;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::W),
+                    ..
+                }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Up),
+                    ..
+                } => {
+                    self.board.move_up();
+                    return true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::A),
+                    ..
+                }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Left),
+                    ..
+                } => {
+                    self.board.move_left();
+                    return true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::S),
+                    ..
+                }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Down),
+                    ..
+                } => {
+                    self.board.move_down();
+                    return true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::D),
+                    ..
+                }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Right),
+                    ..
+                } => {
+                    self.board.move_right();
+                    return true;
+                }
+                Event::AppDidEnterBackground { .. } => {
+                    thread::sleep(time::Duration::from_millis(250));
+                }
+                _ => {
+                    return true;
+                }
+            }
+        }
+        true
+    }
+
+    fn handle_end_input(&mut self, event_pump: &mut EventPump) -> PostGameOption {
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Q),
+                    ..
+                } => {
+                    return PostGameOption::Quit;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::R),
+                    ..
+                } => {
+                    return PostGameOption::Restart;
+                }
+                Event::AppDidEnterBackground { .. } => {
+                    thread::sleep(time::Duration::from_millis(250));
+                }
+                _ => {
+                    return PostGameOption::DisplayScore;
+                }
+            }
+        }
+        PostGameOption::DisplayScore
     }
 }
 

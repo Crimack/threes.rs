@@ -1,3 +1,4 @@
+use colored::*;
 use rand::distributions::{Distribution, Uniform};
 use rand::prelude::ThreadRng;
 use rand::seq::SliceRandom;
@@ -44,7 +45,7 @@ impl Board {
         }
     }
 
-    pub fn move_up(&mut self) {
+    pub fn move_up(&mut self) -> bool {
         let mut moved = false;
         // Resolve by column from left to right
         for col in 0..4 {
@@ -71,12 +72,11 @@ impl Board {
 
             let y = possible_locations[between.sample(&mut self.rng)];
             self.spawn_next_tile(3, y);
-        } else {
-            println!("Invalid move");
         }
+        moved
     }
 
-    pub fn move_down(&mut self) {
+    pub fn move_down(&mut self) -> bool {
         let mut moved = false;
         // Resolve by column from left to right
         for col in 0..4 {
@@ -102,12 +102,11 @@ impl Board {
             let between = Uniform::new(0, possible_locations.len());
             let y = possible_locations[between.sample(&mut self.rng)];
             self.spawn_next_tile(0, y);
-        } else {
-            println!("Invalid move");
         }
+        moved
     }
 
-    pub fn move_left(&mut self) {
+    pub fn move_left(&mut self) -> bool {
         let mut moved = false;
         // Resolve by column from top to bottom
         for row in 0..4 {
@@ -133,12 +132,11 @@ impl Board {
             let between = Uniform::new(0, possible_locations.len());
             let x = possible_locations[between.sample(&mut self.rng)];
             self.spawn_next_tile(x, 3);
-        } else {
-            println!("Invalid move");
         }
+        moved
     }
 
-    pub fn move_right(&mut self) {
+    pub fn move_right(&mut self) -> bool {
         let mut moved = false;
         // Resolve by column from top to bottom
         for row in 0..4 {
@@ -165,9 +163,8 @@ impl Board {
 
             let x = possible_locations[between.sample(&mut self.rng)];
             self.spawn_next_tile(x, 0);
-        } else {
-            println!("Invalid move");
         }
+        moved
     }
 
     fn update_high_card(&mut self, new_card: u32) {
@@ -205,9 +202,13 @@ impl Board {
             println!();
             for num in row {
                 if *num == 0 {
-                    print!("X\t")
+                    print!(" \t")
                 } else {
-                    print!("{}\t", num)
+                    match num {
+                        1 => print!("{}\t", num.to_string().blue()),
+                        2 => print!("{}\t", num.to_string().red()),
+                        _ => print!("{}\t", num),
+                    }
                 }
             }
         }

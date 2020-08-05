@@ -1,3 +1,4 @@
+extern crate colored;
 extern crate getopts;
 extern crate rand;
 extern crate sdl2;
@@ -14,28 +15,35 @@ use board::Board;
 use gui::new_game;
 
 fn handle_input(input: &str, board: &mut Board) -> bool {
+    let mut moved = false;
+    let mut valid_input = false;
     match input.to_uppercase().as_ref() {
         "W" => {
-            board.move_up();
-            true
+            moved = board.move_up();
+            valid_input = true
         }
         "A" => {
-            board.move_left();
-            true
+            moved = board.move_left();
+            valid_input = true
         }
         "S" => {
-            board.move_down();
-            true
+            moved = board.move_down();
+            valid_input = true
         }
         "D" => {
-            board.move_right();
-            true
+            moved = board.move_right();
+            valid_input = true
         }
         _ => {
             println!("Enter either W, A, S or D you dummy");
-            false
         }
     }
+
+    if !moved {
+        println!("Invalid move");
+    }
+
+    valid_input
 }
 
 fn print_help(program: &str, opts: &Options) {
@@ -75,6 +83,7 @@ fn terminal_game() {
     game_board.print();
     println!("Game over!");
     println!("You scored: {}", game_board.calculate_score());
+    println!();
 }
 
 fn main() {
