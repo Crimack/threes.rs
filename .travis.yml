@@ -20,7 +20,7 @@ addons:
     packages:
       - libsdl2-dev
       - libsdl2-image-dev
-      - libsdl2-ttf
+      - libsdl2-ttf-dev
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install sdl2 sdl2_image sdl2_ttf; fi
